@@ -1,0 +1,201 @@
+/* ═══════════════════════════════════════════════════════════
+   PewPewPew 2.0 — Light Theme
+   ═══════════════════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&family=Outfit:wght@600;700;800&display=swap');
+
+/* ── CSS Variables ─────────────────────────────────────────── */
+:root {
+    --paper:       #FAF6EF;
+    --ink:         #2B2D42;
+    --ink-light:   #5C6378;
+    --ink-faint:   #A0A8BE;
+    --accent:      #E85D4A;
+    --blue:        #4A7FD4;
+    --pencil:      #B8B5AD;
+    --eraser-pink: #F8D3CF;
+    --shadow:      rgba(43, 45, 66, 0.08);
+    --shadow-md:   rgba(43, 45, 66, 0.12);
+}
+
+/* ── Reset & Base ──────────────────────────────────────────── */
+*, *::before, *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Body ──────────────────────────────────────────────────── */
+body {
+    font-family: 'DM Sans', system-ui, sans-serif;
+    background-color: var(--paper);
+    color: var(--ink);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16px 20px 40px;
+    position: relative;
+    overflow-x: hidden;
+}
+
+/* ── Page Load Animation ───────────────────────────────────── */
+@keyframes fadeSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(24px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ── Title ─────────────────────────────────────────────────── */
+.game-header {
+    text-align: center;
+    margin-bottom: 28px;
+    animation: fadeSlideUp 0.7s ease-out both;
+    position: relative;
+    z-index: 1;
+}
+
+h1 {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 800;
+    font-size: clamp(2.4rem, 5vw, 3.6rem);
+    letter-spacing: 0.04em;
+    color: var(--ink);
+    position: relative;
+    display: inline-block;
+    line-height: 1.1;
+}
+
+h1 .pew-1 {
+    color: var(--ink);
+}
+
+h1 .pew-2 {
+    color: var(--blue);
+}
+
+/* ── Canvas Container ──────────────────────────────────────── */
+.canvas-wrap {
+    position: relative;
+    animation: fadeSlideUp 0.7s ease-out 0.15s both;
+    z-index: 1;
+}
+
+.canvas-wrap::before {
+    content: '';
+    position: absolute;
+    inset: -12px;
+    border: 2px solid var(--pencil);
+    border-radius: 6px;
+    pointer-events: none;
+    box-shadow:
+        2px 2px 0 0 var(--pencil),
+        inset 0 0 0 1px rgba(184, 181, 173, 0.2);
+}
+
+canvas#game {
+    display: block;
+    image-rendering: pixelated;
+    border-radius: 4px;
+    box-shadow:
+        0 4px 20px var(--shadow),
+        0 12px 40px var(--shadow-md);
+    cursor: crosshair;
+}
+
+/* ── Controls ──────────────────────────────────────────────── */
+.controls {
+    margin-top: 32px;
+    max-width: 700px;
+    text-align: center;
+    animation: fadeSlideUp 0.7s ease-out 0.3s both;
+    position: relative;
+    z-index: 1;
+}
+
+.controls-inner {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1.15rem;
+    color: var(--ink-light);
+    line-height: 1.8;
+    letter-spacing: 0.01em;
+}
+
+.controls kbd {
+    display: inline-block;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--ink);
+    background: white;
+    border: 1.5px solid var(--pencil);
+    border-bottom-width: 3px;
+    border-radius: 5px;
+    padding: 2px 10px 3px;
+    margin: 0 2px;
+    line-height: 1.4;
+    position: relative;
+    transition: transform 0.15s ease, border-color 0.15s ease;
+    transform: rotate(-0.5deg);
+}
+
+.controls kbd:nth-child(even) {
+    transform: rotate(0.4deg);
+}
+
+.controls kbd:hover {
+    border-color: var(--blue);
+    transform: translateY(-2px) rotate(0deg);
+    box-shadow: 0 3px 8px var(--shadow);
+}
+
+.control-divider {
+    display: block;
+    width: 40px;
+    height: 2px;
+    margin: 14px auto;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='2'%3E%3Cpath d='M0 1 Q10 0 20 1 T40 1' fill='none' stroke='%23B8B5AD' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat center;
+}
+
+/* ── Responsive ────────────────────────────────────────────── */
+@media (max-width: 1020px) {
+    canvas#game {
+        width: min(960px, calc(100vw - 60px));
+        height: auto;
+    }
+
+    .canvas-wrap::before {
+        inset: -8px;
+    }
+}
+
+@media (max-width: 600px) {
+    body {
+        padding: 24px 12px 40px;
+    }
+
+    .canvas-wrap::before {
+        inset: -6px;
+    }
+
+    .controls-inner {
+        font-size: 1rem;
+    }
+}
+
+/* ── Selection Color ───────────────────────────────────────── */
+::selection {
+    background: var(--eraser-pink);
+    color: var(--ink);
+}
