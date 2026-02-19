@@ -37,8 +37,8 @@ canvas.addEventListener("mousemove", (e) => {
     mouse.y = e.clientY - rect.top;
 });
 
-// ── Static space background ──────────────────────────────
-// Generated once, redrawn from arrays each frame (no movement)
+// ── Parallax star background ─────────────────────────────
+// Stars shift based on player position; closer layers move more
 
 function generateStars(count, rMin, rMax, alphaMin, alphaMax) {
     const stars = [];
@@ -57,25 +57,36 @@ const starsBack = generateStars(120, 0.3, 1.3, 0.1, 0.4);
 const starsMid = generateStars(60, 0.5, 2, 0.3, 0.8);
 const starsFront = generateStars(25, 1, 2.5, 0.5, 0.9);
 
-function drawStarLayer(layer) {
+function drawStarLayer(layer, parallax) {
+    // Offset based on how far player is from center
+    const ox = (player.x - canvas.width / 2) * parallax;
+    const oy = (player.y - canvas.height / 2) * parallax;
+
     for (const s of layer) {
+        // Wrap stars so they tile seamlessly
+        let sx = (s.x * canvas.width - ox) % canvas.width;
+        let sy = (s.y * canvas.height - oy) % canvas.height;
+        if (sx < 0) sx += canvas.width;
+        if (sy < 0) sy += canvas.height;
+
         ctx.fillStyle = `rgba(255, 255, 255, ${s.alpha})`;
-        ctx.fillRect(
-            Math.round(s.x * canvas.width),
-            Math.round(s.y * canvas.height),
-            Math.ceil(s.r), Math.ceil(s.r)
-        );
+        ctx.fillRect(Math.round(sx), Math.round(sy), Math.ceil(s.r), Math.ceil(s.r));
     }
 }
 
 function drawBackground() {
-    // Background image
-    ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
+    // Background image with subtle parallax (drawn oversized to prevent edge artifacts)
+    const bgParallax = 0.01;
+    const maxShift = Math.max(canvas.width, canvas.height) * bgParallax / 2;
+    const pad = Math.ceil(maxShift) + 1;
+    const bgOx = (player.x - canvas.width / 2) * bgParallax;
+    const bgOy = (player.y - canvas.height / 2) * bgParallax;
+    ctx.drawImage(bgImage, -bgOx - pad, -bgOy - pad, canvas.width + pad * 2, canvas.height + pad * 2);
 
-    // Star layers on top
-    drawStarLayer(starsBack);
-    drawStarLayer(starsMid);
-    drawStarLayer(starsFront);
+    // Star layers with increasing parallax (closer = more movement)
+    drawStarLayer(starsBack, 0.02);
+    drawStarLayer(starsMid, 0.06);
+    drawStarLayer(starsFront, 0.12);
 }
 
 // ── Player logic ─────────────────────────────────────────
