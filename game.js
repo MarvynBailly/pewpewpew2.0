@@ -3,6 +3,10 @@ const ctx = canvas.getContext("2d");
 
 // Canvas size is set in HTML (800x600)
 
+// ── Background image ────────────────────────────────────
+const bgImage = new Image();
+bgImage.src = "Sprites/Background.png";
+
 // ── Sprite sheet config ──────────────────────────────────
 const spriteSheet = new Image();
 spriteSheet.src = "Sprites/paper-airplane-idle.png";
@@ -65,15 +69,12 @@ function drawStarLayer(layer) {
 }
 
 function drawBackground() {
-    // Deep space
-    ctx.fillStyle = "#0a0a12";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    // Background image
+    ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
 
-    // Star layers
+    // Star layers on top
     drawStarLayer(starsBack);
     drawStarLayer(starsMid);
-
-    // Front stars (closest)
     drawStarLayer(starsFront);
 }
 
@@ -132,10 +133,14 @@ function gameLoop(timestamp) {
     requestAnimationFrame(gameLoop);
 }
 
-// Start when sprite sheet is loaded
-spriteSheet.onload = () => {
-    // Center player after first resize
+// Start when both images are loaded
+let loadedCount = 0;
+function onImageLoaded() {
+    loadedCount++;
+    if (loadedCount < 2) return;
     player.x = canvas.width / 2;
     player.y = canvas.height * 0.7;
     requestAnimationFrame(gameLoop);
-};
+}
+spriteSheet.onload = onImageLoaded;
+bgImage.onload = onImageLoaded;
