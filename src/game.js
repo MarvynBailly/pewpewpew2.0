@@ -77,9 +77,11 @@ function gameLoop(timestamp) {
     lastTime = timestamp;
 
     updatePlayer(dt);
+    updateBullets(dt);
     updateEnemies(dt);
 
     drawBackground();
+    drawBullets();
     drawEnemies();
     drawPlayer();
 
