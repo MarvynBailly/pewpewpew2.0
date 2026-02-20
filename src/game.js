@@ -77,8 +77,10 @@ function gameLoop(timestamp) {
     lastTime = timestamp;
 
     updatePlayer(dt);
+    updateEnemies(dt);
 
     drawBackground();
+    drawEnemies();
     drawPlayer();
 
     requestAnimationFrame(gameLoop);
@@ -91,6 +93,12 @@ function onImageLoaded() {
     if (loadedCount < 2) return;
     player.x = canvas.width / 2;
     player.y = canvas.height * 0.7;
+
+    // Spawn a few test enemies
+    createEnemy(100, 100);
+    createEnemy(canvas.width - 100, 100);
+    createEnemy(canvas.width / 2, 50);
+
     requestAnimationFrame(gameLoop);
 }
 spriteSheet.onload = onImageLoaded;
