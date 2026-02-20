@@ -196,12 +196,19 @@ function resetGame() {
     // Clear entities
     enemies.length = 0;
     bullets.length = 0;
+    powerups.length = 0;
+    missiles.length = 0;
+    explosions.length = 0;
 
     // Reset game state
     score = 0;
     gameTime = 0;
     spawnTimer = 1500;
     fireTimer = 0;
+    fireModes = {};
+    freezeTimer = 0;
+    shieldHp = 0;
+    powerupSpawnTimer = 5000;
     gameOver = false;
 
     // Restart loop
@@ -233,14 +240,22 @@ function gameLoop(timestamp) {
     updatePlayer(dt);
     updateBullets(dt);
     updateEnemies(dt);
+    updatePowerups(dt);
+    updateMissiles(dt);
+    updateExplosions(dt);
     updateCollisions();
 
     drawBackground();
+    drawExplosions();
+    drawPowerups();
     drawBullets();
+    drawMissiles();
     drawEnemies();
     drawPlayer();
+    drawShield();
     drawHealthBar();
     drawHUD();
+    drawActiveAbilityHUD();
 
     if (!player.alive) {
         drawGameOver();

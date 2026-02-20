@@ -27,14 +27,58 @@ function spawnBullet() {
     });
 }
 
+function spawnBulletAtAngle(angleDelta) {
+    const baseAngle = Math.atan2(mouse.y - player.y, mouse.x - player.x);
+    const angle = baseAngle + angleDelta;
+    const dirX = Math.cos(angle);
+    const dirY = Math.sin(angle);
+
+    bullets.push({
+        x: player.x + dirX * 15,
+        y: player.y + dirY * 15,
+        vx: dirX * BULLET_SPEED + player.vx * 0.3,
+        vy: dirY * BULLET_SPEED + player.vy * 0.3,
+        hitRadius: BULLET_RADIUS,
+    });
+}
+
 function updateBullets(dt) {
     const seconds = dt / 1000;
 
-    // Auto-fire timer
+    const hasMinigun = !!fireModes.minigun;
+    const hasTrishot = !!fireModes.trishot;
+    const hasMissile = !!fireModes.missile;
+
+    // Determine fire rate: minigun overrides everything, missile-only is slowest
+    const rate = hasMinigun ? 120
+               : hasMissile ? 2000
+               : FIRE_RATE;
+
     fireTimer -= dt;
     if (fireTimer <= 0) {
-        spawnBullet();
-        fireTimer = FIRE_RATE;
+        const angles = hasTrishot
+            ? [0, 15 * Math.PI / 180, -15 * Math.PI / 180]
+            : [hasMinigun ? (Math.random() - 0.5) * (24 * Math.PI / 180) : 0];
+
+        for (const angle of angles) {
+            if (hasMissile) {
+                spawnMissileAtAngle(angle);
+            } else {
+                spawnBulletAtAngle(angle);
+            }
+        }
+
+        // Minigun recoil kick
+        if (hasMinigun) {
+            const dx = mouse.x - player.x;
+            const dy = mouse.y - player.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist >= 1) {
+                Physics.applyThrust(player, -(dx / dist) * 4000, -(dy / dist) * 4000, dt);
+            }
+        }
+
+        fireTimer = rate;
     }
 
     // Move bullets and remove off-screen ones

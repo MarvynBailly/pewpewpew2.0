@@ -60,6 +60,7 @@ function steerArrive(enemy, target, dt) {
 
 // ── Update & draw all enemies ────────────────────────────
 function updateEnemies(dt) {
+    if (freezeTimer > 0) return; // frozen — skip all movement
     for (const e of enemies) {
         steerArrive(e, player, dt);
         Physics.update(e, dt);
