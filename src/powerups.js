@@ -8,8 +8,11 @@ let fireModes = {}; // keys: 'trishot'|'minigun'|'missile'; values: { timer: ms 
                    // multiple modes can be active simultaneously — they stack
 let freezeTimer = 0;       // ms remaining; enemies frozen while > 0
 let shieldHp = 0;          // 1 = shield active, 0 = no shield
+let magnetTimer = 0;       // ms remaining; items pulled toward player while > 0
 
-const POWERUP_TYPES = ['health', 'trishot', 'minigun', 'freeze', 'nuke', 'missile', 'shield'];
+const MAGNET_RADIUS = 200; // px — pull range when magnet is active
+
+const POWERUP_TYPES = ['health', 'trishot', 'minigun', 'freeze', 'nuke', 'missile', 'shield', 'magnet'];
 const POWERUP_RADIUS = 14;
 const POWERUP_MAX_ON_SCREEN = 3;
 const POWERUP_LIFESPAN = 15000; // ms
@@ -25,6 +28,7 @@ const POWERUP_COLORS = {
     nuke:    { ring: '#aa44ff', bg: '#441166' },
     missile: { ring: '#ff4400', bg: '#882200' },
     shield:  { ring: '#ffdd00', bg: '#665500' },
+    magnet:  { ring: '#ff44cc', bg: '#661155' },
 };
 
 const POWERUP_SYMBOLS = {
@@ -35,6 +39,7 @@ const POWERUP_SYMBOLS = {
     nuke:    'N',
     missile: '!',
     shield:  '◯',
+    magnet:  'Ω',
 };
 
 function spawnPowerup() {
@@ -68,6 +73,7 @@ function pickupPowerup(type) {
             freezeTimer = 4000;
             break;
         case 'nuke':
+            for (const e of enemies) dropXpOrb(e.x, e.y);
             score += enemies.length;
             enemies.length = 0;
             break;
@@ -76,6 +82,9 @@ function pickupPowerup(type) {
             break;
         case 'shield':
             shieldHp = 1;
+            break;
+        case 'magnet':
+            magnetTimer = 8000;
             break;
     }
 }
@@ -174,6 +183,27 @@ function updatePowerups(dt) {
     if (freezeTimer > 0) {
         freezeTimer -= dt;
         if (freezeTimer < 0) freezeTimer = 0;
+    }
+
+    // Tick magnet
+    if (magnetTimer > 0) {
+        magnetTimer -= dt;
+        if (magnetTimer < 0) magnetTimer = 0;
+    }
+
+    // Magnet: pull collectible powerups toward player
+    if (magnetTimer > 0) {
+        const seconds = dt / 1000;
+        for (const p of powerups) {
+            const dx = player.x - p.x;
+            const dy = player.y - p.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < MAGNET_RADIUS && dist > 1) {
+                const pull = (1 - dist / MAGNET_RADIUS) * 300 * seconds;
+                p.x += (dx / dist) * pull;
+                p.y += (dy / dist) * pull;
+            }
+        }
     }
 
     // Tick powerup lifespans
@@ -281,6 +311,40 @@ function drawExplosions() {
     }
 }
 
+function drawMagnet() {
+    if (magnetTimer <= 0) return;
+
+    const fadeAlpha = Math.min(1, magnetTimer / 1000);
+    const t = Date.now() / 1000;
+
+    ctx.save();
+
+    // Dashed field-radius ring
+    ctx.beginPath();
+    ctx.arc(player.x, player.y, MAGNET_RADIUS, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(255, 80, 220, ${fadeAlpha * 0.35})`;
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([10, 8]);
+    ctx.lineDashOffset = -t * 50;
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Orbiting dots suggesting field lines
+    const numDots = 8;
+    for (let i = 0; i < numDots; i++) {
+        const angle  = t * 1.8 + (i / numDots) * Math.PI * 2;
+        const orbitR = MAGNET_RADIUS * 0.55;
+        ctx.beginPath();
+        ctx.arc(player.x + Math.cos(angle) * orbitR,
+                player.y + Math.sin(angle) * orbitR,
+                2.5, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255, 80, 220, ${fadeAlpha * 0.65})`;
+        ctx.fill();
+    }
+
+    ctx.restore();
+}
+
 function drawShield() {
     if (shieldHp <= 0) return;
 
@@ -364,6 +428,23 @@ function drawActiveAbilityHUD() {
         ctx.font = 'bold 11px monospace';
         ctx.fillStyle = '#ffdd00';
         ctx.fillText('SHIELD ACTIVE', pad, yOffset);
+        ctx.restore();
+        yOffset += 20;
+    }
+
+    // Magnet timer
+    if (magnetTimer > 0) {
+        const frac = Math.max(0, magnetTimer / 8000);
+        ctx.save();
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        ctx.font = 'bold 11px monospace';
+        ctx.fillStyle = '#ff44cc';
+        ctx.fillText('MAGNET', pad, yOffset);
+        ctx.fillStyle = 'rgba(255,255,255,0.15)';
+        ctx.fillRect(pad, yOffset + 14, barW, barH);
+        ctx.fillStyle = '#ff44cc';
+        ctx.fillRect(pad, yOffset + 14, barW * frac, barH);
         ctx.restore();
     }
 }

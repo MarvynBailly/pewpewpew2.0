@@ -35,6 +35,7 @@ function updateCollisions() {
 
         enemy.hp -= 1;
         if (enemy.hp <= 0) {
+            dropXpOrb(enemy.x, enemy.y);
             enemies.splice(ei, 1);
             score += 1;
         }
@@ -62,6 +63,7 @@ function updateCollisions() {
                 const dy = e.y - m.y;
                 const distSq = dx * dx + dy * dy;
                 if (distSq <= EXPLOSION_MAX_RADIUS * EXPLOSION_MAX_RADIUS) {
+                    dropXpOrb(e.x, e.y);
                     enemies.splice(ei, 1);
                     score += 1;
                 }
@@ -69,10 +71,13 @@ function updateCollisions() {
         }
     }
 
-    // Player vs powerups
+    // Player vs powerups (extended by upgPickupRadius)
     for (let pi = powerups.length - 1; pi >= 0; pi--) {
         const p = powerups[pi];
-        if (Collision.circleVsCircle(player, p)) {
+        const dx = player.x - p.x;
+        const dy = player.y - p.y;
+        const pickupDist = player.hitRadius + upgPickupRadius + p.hitRadius;
+        if (dx * dx + dy * dy <= pickupDist * pickupDist) {
             pickupPowerup(p.type);
             powerups.splice(pi, 1);
         }
@@ -86,6 +91,7 @@ function updateCollisions() {
                 // Shield absorbs the hit
                 if (shieldHp > 0) {
                     shieldHp = 0;
+                    dropXpOrb(e.x, e.y);
                     enemies.splice(ei, 1);
                     player.iFrames = 500;
                     break;
@@ -95,6 +101,7 @@ function updateCollisions() {
                 player.iFrames = 1000; // 1 second of invincibility
 
                 // Destroy the enemy on contact
+                dropXpOrb(e.x, e.y);
                 enemies.splice(ei, 1);
 
                 if (player.hp <= 0) {

@@ -184,12 +184,16 @@ function drawGameOver() {
 }
 
 function resetGame() {
-    // Reset player
+    // Reset player physics stats modified by upgrades
+    player.maxSpeed = 350;
+    player.accel    = 800;
+    player.drag     = 0.97;
+
+    // Reset player position / state
     player.x = canvas.width / 2;
     player.y = canvas.height * 0.7;
     player.vx = 0;
     player.vy = 0;
-    player.hp = PLAYER_MAX_HP;
     player.iFrames = 0;
     player.alive = true;
 
@@ -199,6 +203,7 @@ function resetGame() {
     powerups.length = 0;
     missiles.length = 0;
     explosions.length = 0;
+    xpOrbs.length = 0;
 
     // Reset game state
     score = 0;
@@ -208,8 +213,24 @@ function resetGame() {
     fireModes = {};
     freezeTimer = 0;
     shieldHp = 0;
+    magnetTimer = 0;
     powerupSpawnTimer = 5000;
     gameOver = false;
+
+    // Reset XP & upgrade state
+    playerLevel = 1;
+    playerXp = 0;
+    xpToNextLevel = 5;
+    upgradePending = false;
+    upgradeChoices = [];
+    upgBulletSpeedBonus = 0;
+    upgBulletSizeBonus  = 0;
+    upgFireRateBonus    = 0;
+    upgPickupRadius     = 0;
+    PLAYER_MAX_HP  = 3;
+    player.hp      = PLAYER_MAX_HP;
+    levelUpFlashTimer  = 0;
+    levelUpEffectStart = 0;
 
     // Restart loop
     lastTime = performance.now();
@@ -217,10 +238,24 @@ function resetGame() {
 }
 
 canvas.addEventListener("click", (e) => {
-    if (!gameOver || !drawGameOver.btnBounds) return;
     const rect = canvas.getBoundingClientRect();
     const mx = e.clientX - rect.left;
     const my = e.clientY - rect.top;
+
+    // Upgrade menu card selection
+    if (upgradePending && drawUpgradeMenu.cardBounds) {
+        for (const card of drawUpgradeMenu.cardBounds) {
+            if (mx >= card.x && mx <= card.x + card.w &&
+                my >= card.y && my <= card.y + card.h) {
+                applyUpgrade(card.index);
+                return;
+            }
+        }
+        return; // ignore clicks outside cards while menu is open
+    }
+
+    // Game over retry button
+    if (!gameOver || !drawGameOver.btnBounds) return;
     const b = drawGameOver.btnBounds;
     if (mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h) {
         resetGame();
@@ -234,28 +269,42 @@ function gameLoop(timestamp) {
     const dt = timestamp - lastTime;
     lastTime = timestamp;
 
-    if (player.alive) gameTime += dt;
+    if (player.alive && !upgradePending) gameTime += dt;
 
-    updateSpawner(dt);
-    updatePlayer(dt);
-    updateBullets(dt);
-    updateEnemies(dt);
-    updatePowerups(dt);
-    updateMissiles(dt);
-    updateExplosions(dt);
-    updateCollisions();
+    updateLevelUpFlash(dt); // always ticks, even while menu is open
+
+    if (!upgradePending) {
+        updateSpawner(dt);
+        updatePlayer(dt);
+        updateBullets(dt);
+        updateEnemies(dt);
+        updatePowerups(dt);
+        updateMissiles(dt);
+        updateExplosions(dt);
+        updateXpOrbs(dt);
+        updateCollisions();
+    }
 
     drawBackground();
     drawExplosions();
     drawPowerups();
+    drawXpOrbs();
     drawBullets();
     drawMissiles();
     drawEnemies();
     drawPlayer();
+    drawMagnet();
     drawShield();
     drawHealthBar();
+    drawXpBar();
     drawHUD();
     drawActiveAbilityHUD();
+
+    drawLevelUpFlash(); // green screen flash — visible whether menu is open or not
+
+    if (upgradePending) {
+        drawUpgradeMenu();
+    }
 
     if (!player.alive) {
         drawGameOver();

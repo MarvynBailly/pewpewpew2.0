@@ -8,7 +8,7 @@ const FRAME_COUNT = 3;
 const FRAME_DURATION = 150; // ms per frame
 
 // ── Player state ─────────────────────────────────────────
-const PLAYER_MAX_HP = 3;
+let PLAYER_MAX_HP = 3;
 
 const player = {
     x: 0,
@@ -20,6 +20,7 @@ const player = {
     hitRadius: 14,
     iFrames: 0,          // invincibility timer (ms) after taking a hit
     alive: true,
+    drawAngle: 0,        // cached facing angle; frozen while upgrade menu is open
 };
 Physics.initBody(player, {
     accel: 800,      // thrust strength (pixels/s²)
@@ -73,9 +74,12 @@ function drawPlayer() {
     const drawW = FRAME_W * player.scale;
     const drawH = FRAME_H * player.scale;
 
-    // Angle from player to mouse (sprite faces up, so offset by -90deg)
+    // Angle from player to mouse — only update when game is running
     const offset = 0.5;
-    const angle = Math.atan2(mouse.y - player.y, mouse.x - player.x) + Math.PI / 2 - offset;
+    if (!upgradePending) {
+        player.drawAngle = Math.atan2(mouse.y - player.y, mouse.x - player.x) + Math.PI / 2 - offset;
+    }
+    const angle = player.drawAngle;
 
     ctx.save();
     ctx.translate(player.x, player.y);

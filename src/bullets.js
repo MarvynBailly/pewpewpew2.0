@@ -8,37 +8,42 @@ const FIRE_RATE = 1000;        // ms between shots
 
 let fireTimer = 0;
 
+function effectiveBulletSpeed() { return BULLET_SPEED * (1 + upgBulletSpeedBonus); }
+function effectiveBulletRadius() { return BULLET_RADIUS + upgBulletSizeBonus; }
+function effectiveFireRate()    { return Math.max(200, FIRE_RATE * (1 - upgFireRateBonus)); }
+
 function spawnBullet() {
     const dx = mouse.x - player.x;
     const dy = mouse.y - player.y;
     const dist = Math.sqrt(dx * dx + dy * dy);
     if (dist < 1) return; // mouse is right on the player
 
-    // Normalize direction and set velocity
     const dirX = dx / dist;
     const dirY = dy / dist;
+    const spd  = effectiveBulletSpeed();
 
     bullets.push({
-        x: player.x + dirX * 15,   // spawn slightly ahead of the ship
+        x: player.x + dirX * 15,
         y: player.y + dirY * 15,
-        vx: dirX * BULLET_SPEED + player.vx * 0.3,  // inherit a bit of player momentum
-        vy: dirY * BULLET_SPEED + player.vy * 0.3,
-        hitRadius: BULLET_RADIUS,
+        vx: dirX * spd + player.vx * 0.3,
+        vy: dirY * spd + player.vy * 0.3,
+        hitRadius: effectiveBulletRadius(),
     });
 }
 
 function spawnBulletAtAngle(angleDelta) {
     const baseAngle = Math.atan2(mouse.y - player.y, mouse.x - player.x);
     const angle = baseAngle + angleDelta;
-    const dirX = Math.cos(angle);
-    const dirY = Math.sin(angle);
+    const dirX  = Math.cos(angle);
+    const dirY  = Math.sin(angle);
+    const spd   = effectiveBulletSpeed();
 
     bullets.push({
         x: player.x + dirX * 15,
         y: player.y + dirY * 15,
-        vx: dirX * BULLET_SPEED + player.vx * 0.3,
-        vy: dirY * BULLET_SPEED + player.vy * 0.3,
-        hitRadius: BULLET_RADIUS,
+        vx: dirX * spd + player.vx * 0.3,
+        vy: dirY * spd + player.vy * 0.3,
+        hitRadius: effectiveBulletRadius(),
     });
 }
 
@@ -50,9 +55,9 @@ function updateBullets(dt) {
     const hasMissile = !!fireModes.missile;
 
     // Determine fire rate: minigun overrides everything, missile-only is slowest
-    const rate = hasMinigun ? 120
-               : hasMissile ? 2000
-               : FIRE_RATE;
+    const rate = hasMinigun ? Math.max(60, 120 * (1 - upgFireRateBonus))
+               : hasMissile ? Math.max(400, 2000 * (1 - upgFireRateBonus))
+               : effectiveFireRate();
 
     fireTimer -= dt;
     if (fireTimer <= 0) {
