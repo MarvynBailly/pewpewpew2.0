@@ -77,16 +77,7 @@ function onBossDeath() {
     difficultyOffset = gameTime;
     spawnTimer       = 2000;
 
-    if (dualBossMode) {
-        // In the dual phase: restart countdown only when both bosses are dead
-        if (boss2 === null) {
-            postBossMode     = true;          // NOW go crazy
-            difficultyOffset = gameTime - 20000; // ~408ms spawn interval with 3× multiplier
-            dualBossCountdown = 60000;
-        }
-    } else {
-        boss2SpawnCountdown = 60000; // solo Boss II spawns 60 s after Boss I
-    }
+    advanceBossQueue();
 }
 
 // ── Predictive aim ────────────────────────────────────────
@@ -230,7 +221,7 @@ function drawBoss() {
             ctx.textBaseline = "middle";
             ctx.font         = "bold 68px monospace";
             ctx.fillStyle    = "rgba(255, 220, 40, 0.95)";
-            ctx.fillText("! BOSS INCOMING !", canvas.width / 2, canvas.height / 2);
+            ctx.fillText("! THE HUNTER INCOMING !", canvas.width / 2, canvas.height / 2);
         }
     }
 
@@ -346,7 +337,7 @@ function drawBossHpBar() {
     ctx.textBaseline = "bottom";
     ctx.font         = "bold 13px monospace";
     ctx.fillStyle    = "rgba(255, 210, 60, 0.9)";
-    ctx.fillText("BOSS", canvas.width / 2, by - 3);
+    ctx.fillText("THE HUNTER", canvas.width / 2, by - 3);
 
     ctx.fillStyle = "rgba(0, 0, 0, 0.65)";
     ctx.fillRect(bx, by, barW, barH);

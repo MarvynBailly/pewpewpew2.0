@@ -76,13 +76,14 @@ function pickupPowerup(type) {
             for (const e of enemies) dropXpOrb(e.x, e.y);
             score += enemies.length;
             enemies.length = 0;
-            // Deal damage to bosses (but can't kill them outright)
-            if (typeof boss !== 'undefined' && boss) {
-                boss.hp = Math.max(1, boss.hp - 10);
-            }
-            if (typeof boss2 !== 'undefined' && boss2) {
-                boss2.hp = Math.max(1, boss2.hp - 10);
-            }
+            // Deal damage to all active bosses (can't kill outright)
+            if (typeof boss  !== 'undefined' && boss)  boss.hp  = Math.max(1, boss.hp  - 10);
+            if (typeof boss2 !== 'undefined' && boss2) boss2.hp = Math.max(1, boss2.hp - 10);
+            if (typeof boss3 !== 'undefined' && boss3 && !boss3Shielded) boss3.hp = Math.max(1, boss3.hp - 10);
+            if (typeof boss4 !== 'undefined' && boss4) boss4.hp = Math.max(1, boss4.hp - 10);
+            if (typeof boss5 !== 'undefined' && boss5) boss5.hp = Math.max(1, boss5.hp - 10);
+            if (typeof boss6 !== 'undefined' && boss6 && !boss6Shielded) boss6.hp = Math.max(1, boss6.hp - 10);
+            if (typeof boss7 !== 'undefined' && boss7 && !boss7Shielded) boss7.hp = Math.max(1, boss7.hp - 10);
             break;
         case 'missile':
             fireModes.missile = { timer: 8000 };

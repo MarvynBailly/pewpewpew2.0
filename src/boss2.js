@@ -107,18 +107,7 @@ function onBoss2Death() {
     difficultyOffset     = gameTime;
     spawnTimer           = 2000;
 
-    if (dualBossMode) {
-        // In the dual phase: restart countdown only when both bosses are dead
-        if (boss === null) {
-            postBossMode     = true;          // NOW go crazy
-            difficultyOffset = gameTime - 20000; // ~408ms spawn interval with 3× multiplier
-            dualBossCountdown = 60000;
-        }
-    } else {
-        // Solo Boss II down — moderate difficulty jump, dual phase coming soon
-        difficultyOffset = gameTime - 15000; // ~1600ms spawn interval, manageable
-        dualBossCountdown = 60000;
-    }
+    advanceBossQueue();
 }
 
 // ── Bullet-threat detection ───────────────────────────────
@@ -347,7 +336,7 @@ function drawBoss2() {
             ctx.textBaseline = "middle";
             ctx.font         = "bold 68px monospace";
             ctx.fillStyle    = "rgba(80, 210, 255, 0.95)";
-            ctx.fillText("! BOSS II INCOMING !", canvas.width / 2, canvas.height / 2);
+            ctx.fillText("! THE FIGHTER INCOMING !", canvas.width / 2, canvas.height / 2);
         }
     }
 
@@ -476,7 +465,7 @@ function drawBoss2HpBar() {
     ctx.textBaseline = "bottom";
     ctx.font         = "bold 13px monospace";
     ctx.fillStyle    = "rgba(255, 210, 60, 0.9)";
-    ctx.fillText("BOSS II", canvas.width / 2, by - 3);
+    ctx.fillText("THE FIGHTER", canvas.width / 2, by - 3);
 
     ctx.fillStyle = "rgba(0, 0, 0, 0.65)";
     ctx.fillRect(bx, by, barW, barH);

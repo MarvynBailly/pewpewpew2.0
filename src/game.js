@@ -148,43 +148,68 @@ function spawnEnemyFromEdge() {
 
 const BOSS_SPAWN_TIME = 60000; // 60 seconds
 
-let postBossMode        = false; // true after both bosses are killed — ramps difficulty hard
-let boss2SpawnCountdown = -1; // counts down after Boss I dies (solo Boss II fight)
-let dualBossCountdown  = -1; // counts down after Boss II dies (dual fight)
-let dualBossMode       = false; // true once the dual phase begins
+let postBossMode      = false; // true after all bosses are killed — ramps difficulty hard
+let nextBossCountdown = -1;   // ms until the next boss in the queue spawns
+let bossQueueIndex    = -1;   // index into bossQueue; -1 = not started yet
+let bossQueue         = [];   // shuffled array of boss indices 0–6
+
+// Spawn function lookup by boss index (0 = Boss I … 6 = Boss VII)
+// Defined as lambdas so the references are resolved after all scripts load.
+const BOSS_SPAWN_FNS = [
+    () => spawnBoss(),
+    () => spawnBoss2(),
+    () => spawnBoss3(),
+    () => spawnBoss4(),
+    () => spawnBoss5(),
+    () => spawnBoss6(),
+    () => spawnBoss7(),
+];
+
+function shuffleBossQueue() {
+    bossQueue = [0, 1, 2, 3, 4, 5, 6];
+    for (let i = bossQueue.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [bossQueue[i], bossQueue[j]] = [bossQueue[j], bossQueue[i]];
+    }
+}
+
+// Called by every boss death handler.
+// Advances the queue and either starts the next boss countdown or triggers postBossMode.
+function advanceBossQueue() {
+    bossQueueIndex++;
+    difficultyOffset = gameTime;
+    spawnTimer       = 2000;
+    if (bossQueueIndex >= bossQueue.length) {
+        postBossMode     = true;
+        difficultyOffset = gameTime - 20000; // start already-ramped difficulty
+    } else {
+        nextBossCountdown = 60000; // 60s until next boss
+    }
+}
 
 function updateSpawner(dt) {
     if (!player.alive) return;
 
-    // Trigger Boss I at 60 s
-    if (!bossSpawned && gameTime >= BOSS_SPAWN_TIME) {
-        spawnBoss();
+    // Trigger the first boss at 60s
+    if (bossQueueIndex === -1 && gameTime >= BOSS_SPAWN_TIME) {
+        bossQueueIndex = 0;
+        BOSS_SPAWN_FNS[bossQueue[0]]();
         return;
     }
 
-    // Tick the Boss II solo countdown (starts when Boss I dies)
-    if (boss2SpawnCountdown > 0) {
-        boss2SpawnCountdown -= dt;
-        if (boss2SpawnCountdown <= 0 && !boss2Spawned) {
-            spawnBoss2();
+    // Countdown to the next boss in the queue
+    if (nextBossCountdown > 0) {
+        nextBossCountdown -= dt;
+        if (nextBossCountdown <= 0) {
+            nextBossCountdown = -1;
+            BOSS_SPAWN_FNS[bossQueue[bossQueueIndex]]();
             return;
         }
     }
 
-    // Tick the dual-boss countdown (starts when Boss II dies solo, then repeats)
-    if (dualBossCountdown > 0) {
-        dualBossCountdown -= dt;
-        if (dualBossCountdown <= 0) {
-            dualBossMode = true;
-            spawnBoss();
-            spawnBoss2();
-            dualBossCountdown = -1;
-            return;
-        }
-    }
-
-    // Pause regular spawning while either boss is alive or enemies are frozen
-    if (boss !== null || boss2 !== null) return;
+    // Pause regular enemy spawning while any boss is alive
+    if (boss !== null || boss2 !== null || boss3 !== null ||
+        boss4 !== null || boss5 !== null || boss6 !== null || boss7 !== null) return;
     if (freezeTimer > 0) return;
 
     spawnTimer -= dt;
@@ -290,10 +315,10 @@ function resetGame() {
     bossChargeTimer    = BOSS_CHARGE_INTERVAL;
     bossBullets.length = 0;
     dashTrail.length   = 0;
-    postBossMode         = false;
-    boss2SpawnCountdown  = -1;
-    dualBossCountdown    = -1;
-    dualBossMode         = false;
+    postBossMode      = false;
+    nextBossCountdown = -1;
+    bossQueueIndex    = -1;
+    shuffleBossQueue();
     boss2              = null;
     boss2Spawned       = false;
     boss2WarningTimer  = 0;
@@ -310,6 +335,18 @@ function resetGame() {
     boss2Missiles.length  = 0;
     boss2Bullets.length   = 0;
     boss2DodgeTrail.length = 0;
+    // Boss 3–7
+    boss3 = null; boss3Spawned = false; boss3WarningTimer = 0; boss3Phase2 = false;
+    boss3Bullets.length = 0; boss3Shockwaves.length = 0;
+    boss4 = null; boss4Spawned = false; boss4WarningTimer = 0; boss4Phase2 = false;
+    boss4BeamActive = false; boss4Bullets.length = 0;
+    boss5 = null; boss5Spawned = false; boss5WarningTimer = 0; boss5Phase2 = false;
+    boss5Bullets.length = 0;
+    boss6 = null; boss6Spawned = false; boss6WarningTimer = 0; boss6Phase2 = false;
+    boss6Bullets.length = 0; boss6DashTrail.length = 0;
+    boss7 = null; boss7Spawned = false; boss7WarningTimer = 0; boss7Phase2 = false;
+    boss7Missiles.length = 0; boss7Bullets.length = 0;
+    // Clear any berserk flags from enemies (they were already cleared by enemies.length = 0 above)
     paused             = false;
     fireTimer = 0;
     fireModes = {};
@@ -411,6 +448,11 @@ function gameLoop(timestamp) {
         updateEnemies(dt);
         updateBoss(dt);
         updateBoss2(dt);
+        updateBoss3(dt);
+        updateBoss4(dt);
+        updateBoss5(dt);
+        updateBoss6(dt);
+        updateBoss7(dt);
         updatePowerups(dt);
         updateMissiles(dt);
         updateExplosions(dt);
@@ -427,6 +469,11 @@ function gameLoop(timestamp) {
     drawEnemies();
     drawBoss();
     drawBoss2();
+    drawBoss3();
+    drawBoss4();
+    drawBoss5();
+    drawBoss6();
+    drawBoss7();
     drawPlayer();
     drawMagnet();
     drawShield();
@@ -451,6 +498,7 @@ function gameLoop(timestamp) {
 }
 
 // Start when both images are loaded
+shuffleBossQueue(); // randomise boss order for the first run
 let loadedCount = 0;
 function onImageLoaded() {
     loadedCount++;
