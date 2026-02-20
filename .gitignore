@@ -1,6 +1,3 @@
 # ignore claude files
 .claude/
 CLAUDE.md
-
-# ignore old code
-oldcode/
