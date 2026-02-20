@@ -42,3 +42,6 @@ Awarded on level up — choose 1 of 3 randomly offered upgrades. XP is dropped b
 - [ ] disable arrow key page movement
 - [ ] add mobile support
 - [ ] add firebase leaderboard
+
+- [ ]  for the bosses the freeze power up should slow it
+- [ ]  nuke does a bit of damage instead of nothing to bosses
