@@ -79,7 +79,11 @@ function onBossDeath() {
 
     if (dualBossMode) {
         // In the dual phase: restart countdown only when both bosses are dead
-        if (boss2 === null) dualBossCountdown = 60000;
+        if (boss2 === null) {
+            postBossMode     = true;          // NOW go crazy
+            difficultyOffset = gameTime - 20000; // ~408ms spawn interval with 3× multiplier
+            dualBossCountdown = 60000;
+        }
     } else {
         boss2SpawnCountdown = 60000; // solo Boss II spawns 60 s after Boss I
     }
@@ -122,8 +126,11 @@ function updateBoss(dt) {
     }
 
     const sec = dt / 1000;
+    // Freeze power-up slows boss movement to 30% (timers still tick normally)
+    const moveSec = freezeTimer > 0 ? sec * 0.3 : sec;
+    const moveDt  = moveSec * 1000;
 
-    // Move boss bullets
+    // Move boss bullets (unaffected by freeze)
     for (let i = bossBullets.length - 1; i >= 0; i--) {
         const b = bossBullets[i];
         b.x += b.vx * sec;
@@ -136,8 +143,8 @@ function updateBoss(dt) {
 
     // ── HUNT ──────────────────────────────────────────────
     if (bossState === BS.HUNT) {
-        steerArrive(boss, player, dt);
-        Physics.update(boss, dt);
+        steerArrive(boss, player, moveDt);
+        Physics.update(boss, moveDt);
         Physics.clampToBounds(boss, BOSS_SIZE, BOSS_SIZE, canvas.width, canvas.height);
 
         // Shoot at player
@@ -164,8 +171,8 @@ function updateBoss(dt) {
         boss.vy *= brakeDrag;
         if (Math.abs(boss.vx) < 1) boss.vx = 0;
         if (Math.abs(boss.vy) < 1) boss.vy = 0;
-        boss.x += boss.vx * sec;
-        boss.y += boss.vy * sec;
+        boss.x += boss.vx * moveSec;
+        boss.y += boss.vy * moveSec;
         Physics.clampToBounds(boss, BOSS_SIZE, BOSS_SIZE, canvas.width, canvas.height);
 
         bossStateTimer -= dt;
@@ -186,8 +193,8 @@ function updateBoss(dt) {
         dashTrail.push({ x: boss.x, y: boss.y, age: 0 });
 
         // Move in locked straight line — bypass physics engine
-        boss.x += bossDashVx * sec;
-        boss.y += bossDashVy * sec;
+        boss.x += bossDashVx * moveSec;
+        boss.y += bossDashVy * moveSec;
 
         // Bounce off edges to keep boss on-screen
         if (boss.x < BOSS_SIZE)                 { boss.x = BOSS_SIZE;                 bossDashVx = Math.abs(bossDashVx) * 0.6; }

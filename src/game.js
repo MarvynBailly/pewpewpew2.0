@@ -14,6 +14,10 @@ let paused = false;
 
 window.addEventListener("keydown", (e) => {
     keys[e.key] = true;
+    // Prevent arrow keys from scrolling the page
+    if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
+        e.preventDefault();
+    }
     if (e.key === "Escape" && player.alive && !upgradePending) {
         paused = !paused;
         if (!paused) {

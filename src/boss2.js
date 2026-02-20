@@ -109,12 +109,14 @@ function onBoss2Death() {
 
     if (dualBossMode) {
         // In the dual phase: restart countdown only when both bosses are dead
-        if (boss === null) dualBossCountdown = 60000;
+        if (boss === null) {
+            postBossMode     = true;          // NOW go crazy
+            difficultyOffset = gameTime - 20000; // ~408ms spawn interval with 3× multiplier
+            dualBossCountdown = 60000;
+        }
     } else {
-        // Both bosses killed for the first time — kick difficulty into high gear
-        postBossMode     = true;
-        difficultyOffset = gameTime - 45000; // jump-start at 45 s equivalent
-        // Start the dual-boss countdown
+        // Solo Boss II down — moderate difficulty jump, dual phase coming soon
+        difficultyOffset = gameTime - 15000; // ~1600ms spawn interval, manageable
         dualBossCountdown = 60000;
     }
 }
@@ -183,6 +185,9 @@ function updateBoss2(dt) {
     if (boss2WarningTimer > 0) { boss2WarningTimer -= dt; return; }
 
     const sec = dt / 1000;
+    // Freeze power-up slows boss movement to 30% (timers still tick normally)
+    const moveSec = freezeTimer > 0 ? sec * 0.3 : sec;
+    const moveDt  = moveSec * 1000;
 
     // ── Homing missiles ───────────────────────────────────
     for (let i = boss2Missiles.length - 1; i >= 0; i--) {
@@ -246,8 +251,8 @@ function updateBoss2(dt) {
         if (boss2DodgeActive) {
             // Smooth dash — same approach as Boss I charge
             boss2DodgeTrail.push({ x: boss2.x, y: boss2.y, age: 0 });
-            boss2.x += boss2DodgeDirX * DODGE_SPEED * sec;
-            boss2.y += boss2DodgeDirY * DODGE_SPEED * sec;
+            boss2.x += boss2DodgeDirX * DODGE_SPEED * moveSec;
+            boss2.y += boss2DodgeDirY * DODGE_SPEED * moveSec;
             boss2.x = Math.max(BOSS2_SIZE, Math.min(canvas.width  - BOSS2_SIZE, boss2.x));
             boss2.y = Math.max(BOSS2_SIZE, Math.min(canvas.height - BOSS2_SIZE, boss2.y));
             boss2.vx = boss2DodgeDirX * DODGE_SPEED;
@@ -267,17 +272,17 @@ function updateBoss2(dt) {
                 boss2DodgeTrail.length = 0;
             }
         } else {
-            boss2OrbitAngle += 0.42 * sec;
+            boss2OrbitAngle += 0.42 * moveSec;
             const orbitTargetX = player.x + Math.cos(boss2OrbitAngle) * BOSS2_ORBIT_RADIUS;
             const orbitTargetY = player.y + Math.sin(boss2OrbitAngle) * BOSS2_ORBIT_RADIUS;
-            steerArrive(boss2, { x: orbitTargetX, y: orbitTargetY }, dt);
+            steerArrive(boss2, { x: orbitTargetX, y: orbitTargetY }, moveDt);
 
             if (boss2DodgeCooldown <= 0) {
                 const threat = _b2FindThreat();
                 if (threat) _b2Dodge(threat);
             }
 
-            Physics.update(boss2, dt);
+            Physics.update(boss2, moveDt);
             Physics.clampToBounds(boss2, BOSS2_SIZE, BOSS2_SIZE, canvas.width, canvas.height);
         }
 
@@ -293,8 +298,8 @@ function updateBoss2(dt) {
             // Fly straight at locked velocity
             boss2.vx = boss2DashVx;
             boss2.vy = boss2DashVy;
-            boss2.x += boss2.vx * sec;
-            boss2.y += boss2.vy * sec;
+            boss2.x += boss2.vx * moveSec;
+            boss2.y += boss2.vy * moveSec;
             boss2.x = Math.max(BOSS2_SIZE, Math.min(canvas.width  - BOSS2_SIZE, boss2.x));
             boss2.y = Math.max(BOSS2_SIZE, Math.min(canvas.height - BOSS2_SIZE, boss2.y));
 
@@ -306,8 +311,8 @@ function updateBoss2(dt) {
                 boss2DashTimer = B2_DASH_COOLDOWN;
             }
         } else {
-            steerArrive(boss2, player, dt);
-            Physics.update(boss2, dt);
+            steerArrive(boss2, player, moveDt);
+            Physics.update(boss2, moveDt);
             Physics.clampToBounds(boss2, BOSS2_SIZE, BOSS2_SIZE, canvas.width, canvas.height);
 
             boss2DashTimer -= dt;
