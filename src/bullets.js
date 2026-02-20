@@ -23,6 +23,7 @@ function spawnBullet() {
         y: player.y + dirY * 15,
         vx: dirX * BULLET_SPEED + player.vx * 0.3,  // inherit a bit of player momentum
         vy: dirY * BULLET_SPEED + player.vy * 0.3,
+        hitRadius: BULLET_RADIUS,
     });
 }
 

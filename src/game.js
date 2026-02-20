@@ -79,6 +79,7 @@ function gameLoop(timestamp) {
     updatePlayer(dt);
     updateBullets(dt);
     updateEnemies(dt);
+    updateCollisions();
 
     drawBackground();
     drawBullets();

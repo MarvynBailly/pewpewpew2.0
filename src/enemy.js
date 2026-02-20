@@ -13,6 +13,8 @@ function createEnemy(x, y) {
     const e = {
         x, y,
         maxForce: randRange(250, 450),   // turning aggressiveness
+        hitRadius: ENEMY_SIZE,           // collision circle — resize to match future sprites
+        hp: 1,                           // hits to destroy
     };
     Physics.initBody(e, {
         accel: 0,
