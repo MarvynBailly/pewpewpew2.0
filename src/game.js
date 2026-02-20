@@ -85,6 +85,7 @@ function gameLoop(timestamp) {
     drawBullets();
     drawEnemies();
     drawPlayer();
+    drawHealthBar();
 
     requestAnimationFrame(gameLoop);
 }

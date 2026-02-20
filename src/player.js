@@ -8,12 +8,18 @@ const FRAME_COUNT = 3;
 const FRAME_DURATION = 150; // ms per frame
 
 // ── Player state ─────────────────────────────────────────
+const PLAYER_MAX_HP = 3;
+
 const player = {
     x: 0,
     y: 0,
     scale: 1,
     frame: 0,
     frameTimer: 0,
+    hp: PLAYER_MAX_HP,
+    hitRadius: 14,
+    iFrames: 0,          // invincibility timer (ms) after taking a hit
+    alive: true,
 };
 Physics.initBody(player, {
     accel: 800,      // thrust strength (pixels/s²)
@@ -23,6 +29,11 @@ Physics.initBody(player, {
 
 // ── Player logic ─────────────────────────────────────────
 function updatePlayer(dt) {
+    if (!player.alive) return;
+
+    // Tick invincibility
+    if (player.iFrames > 0) player.iFrames -= dt;
+
     // Build thrust direction from input
     let ax = 0, ay = 0;
     if (keys["ArrowUp"]    || keys["w"]) ay -= 1;
@@ -54,6 +65,11 @@ function updatePlayer(dt) {
 }
 
 function drawPlayer() {
+    if (!player.alive) return;
+
+    // Blink during invincibility (skip drawing every other 80ms)
+    if (player.iFrames > 0 && Math.floor(player.iFrames / 80) % 2 === 0) return;
+
     const drawW = FRAME_W * player.scale;
     const drawH = FRAME_H * player.scale;
 
@@ -73,4 +89,28 @@ function drawPlayer() {
         drawW, drawH
     );
     ctx.restore();
+}
+
+// ── Health bar HUD ───────────────────────────────────────
+function drawHealthBar() {
+    const barW = 120;
+    const barH = 12;
+    const x = 20;
+    const y = 20;
+    const fill = player.hp / PLAYER_MAX_HP;
+
+    // Background
+    ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+    ctx.fillRect(x, y, barW, barH);
+
+    // Health fill
+    ctx.fillStyle = fill > 0.5 ? "rgba(80, 220, 100, 0.9)"
+                  : fill > 0.25 ? "rgba(220, 180, 50, 0.9)"
+                  : "rgba(220, 50, 50, 0.9)";
+    ctx.fillRect(x, y, barW * fill, barH);
+
+    // Border
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.6)";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x, y, barW, barH);
 }

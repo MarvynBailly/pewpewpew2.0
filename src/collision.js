@@ -27,16 +27,34 @@ const Collision = {
     },
 };
 
-// ── Resolve bullet-enemy hits each frame ─────────────────
+// ── Resolve all collisions each frame ────────────────────
 function updateCollisions() {
+    // Bullets vs enemies
     Collision.bulletsVsEnemies((bullet, bi, enemy, ei) => {
-        // Remove the bullet
         bullets.splice(bi, 1);
 
-        // Damage the enemy
         enemy.hp -= 1;
         if (enemy.hp <= 0) {
             enemies.splice(ei, 1);
         }
     });
+
+    // Enemies vs player
+    if (player.alive && player.iFrames <= 0) {
+        for (let ei = enemies.length - 1; ei >= 0; ei--) {
+            const e = enemies[ei];
+            if (Collision.circleVsCircle(player, e)) {
+                player.hp -= 1;
+                player.iFrames = 1000; // 1 second of invincibility
+
+                // Destroy the enemy on contact
+                enemies.splice(ei, 1);
+
+                if (player.hp <= 0) {
+                    player.alive = false;
+                }
+                break; // only take one hit per frame
+            }
+        }
+    }
 }
