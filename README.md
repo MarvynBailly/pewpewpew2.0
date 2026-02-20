@@ -45,3 +45,12 @@ Awarded on level up — choose 1 of 3 randomly offered upgrades. XP is dropped b
 
 - [ ]  for the bosses the freeze power up should slow it
 - [ ]  nuke does a bit of damage instead of nothing to bosses
+
+## Ayden's To Do:
+- [ ] Two more backgrounds, sun/fire themed and ice/comet themed
+- [ ] Character (jet/plane) sprites
+- [ ] Boss sprites
+- [ ] Enemy sprites
+- [ ] Power up sprites maybe?
+- [ ] Bullet sprites
+- [ ] Pewpewpew lore
