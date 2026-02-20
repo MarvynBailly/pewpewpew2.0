@@ -40,3 +40,5 @@ Awarded on level up — choose 1 of 3 randomly offered upgrades. XP is dropped b
 
 ## To Do:
 - [ ] disable arrow key page movement
+- [ ] add mobile support
+- [ ] add firebase leaderboard
