@@ -10,16 +10,20 @@ function randRange(min, max) {
 }
 
 function createEnemy(x, y) {
+    // Difficulty scales with time — enemies get faster and more aggressive
+    const elapsed = gameTime / 1000;
+    const ramp = 1 + elapsed * 0.02; // +2% per second
+
     const e = {
         x, y,
-        maxForce: randRange(250, 450),   // turning aggressiveness
-        hitRadius: ENEMY_SIZE,           // collision circle — resize to match future sprites
-        hp: 1,                           // hits to destroy
+        maxForce: randRange(250, 450) * ramp,
+        hitRadius: ENEMY_SIZE,
+        hp: 1,
     };
     Physics.initBody(e, {
         accel: 0,
-        maxSpeed: randRange(250, 380),   // some are nearly as fast as the player
-        drag: randRange(0.985, 0.999),   // varied drift
+        maxSpeed: randRange(250, 380) * ramp,
+        drag: randRange(0.985, 0.999),
     });
     enemies.push(e);
     return e;

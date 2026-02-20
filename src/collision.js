@@ -36,6 +36,7 @@ function updateCollisions() {
         enemy.hp -= 1;
         if (enemy.hp <= 0) {
             enemies.splice(ei, 1);
+            score += 1;
         }
     });
 
