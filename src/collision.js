@@ -41,6 +41,17 @@ function updateCollisions() {
         }
     });
 
+    // Bullets vs boss
+    if (boss) {
+        for (let bi = bullets.length - 1; bi >= 0; bi--) {
+            if (Collision.circleVsCircle(bullets[bi], boss)) {
+                bullets.splice(bi, 1);
+                boss.hp -= 1;
+                if (boss.hp <= 0) { onBossDeath(); break; }
+            }
+        }
+    }
+
     // Missiles vs enemies
     for (let mi = missiles.length - 1; mi >= 0; mi--) {
         const m = missiles[mi];
@@ -68,6 +79,105 @@ function updateCollisions() {
                     score += 1;
                 }
             }
+        }
+    }
+
+    // Missiles vs boss
+    if (boss) {
+        for (let mi = missiles.length - 1; mi >= 0; mi--) {
+            if (Collision.circleVsCircle(missiles[mi], boss)) {
+                triggerExplosion(missiles[mi].x, missiles[mi].y);
+                missiles.splice(mi, 1);
+                boss.hp -= 5; // missile does heavy damage
+                if (boss.hp <= 0) { onBossDeath(); break; }
+            }
+        }
+    }
+
+    // Boss bullets vs player
+    if (player.alive && player.iFrames <= 0) {
+        for (let bi = bossBullets.length - 1; bi >= 0; bi--) {
+            if (Collision.circleVsCircle(bossBullets[bi], player)) {
+                bossBullets.splice(bi, 1);
+                if (shieldHp > 0) {
+                    shieldHp = 0;
+                    player.iFrames = 500;
+                } else {
+                    player.hp -= 1;
+                    player.iFrames = 1000;
+                    if (player.hp <= 0) player.alive = false;
+                }
+                break;
+            }
+        }
+    }
+
+    // Boss body vs player
+    if (boss && bossWarningTimer <= 0 && player.alive && player.iFrames <= 0) {
+        if (Collision.circleVsCircle(player, boss)) {
+            if (shieldHp > 0) {
+                shieldHp = 0;
+                player.iFrames = 500;
+            } else {
+                player.hp -= 1;
+                player.iFrames = 1000;
+                if (player.hp <= 0) player.alive = false;
+            }
+        }
+    }
+
+    // Player bullets vs boss2
+    if (boss2) {
+        for (let bi = bullets.length - 1; bi >= 0; bi--) {
+            if (Collision.circleVsCircle(bullets[bi], boss2)) {
+                bullets.splice(bi, 1);
+                boss2.hp -= 1;
+                if (boss2.hp <= 0) { onBoss2Death(); break; }
+            }
+        }
+    }
+
+    // Player missiles vs boss2
+    if (boss2) {
+        for (let mi = missiles.length - 1; mi >= 0; mi--) {
+            if (Collision.circleVsCircle(missiles[mi], boss2)) {
+                triggerExplosion(missiles[mi].x, missiles[mi].y);
+                missiles.splice(mi, 1);
+                boss2.hp -= 5;
+                if (boss2.hp <= 0) { onBoss2Death(); break; }
+            }
+        }
+    }
+
+    // Boss2 homing missiles vs player
+    if (player.alive && player.iFrames <= 0) {
+        for (let mi = boss2Missiles.length - 1; mi >= 0; mi--) {
+            if (Collision.circleVsCircle(boss2Missiles[mi], player)) {
+                boss2Missiles.splice(mi, 1);
+                if (shieldHp > 0) { shieldHp = 0; player.iFrames = 500; }
+                else { player.hp -= 1; player.iFrames = 1000; if (player.hp <= 0) player.alive = false; }
+                break;
+            }
+        }
+    }
+
+    // Boss2 spread bullets vs player
+    if (player.alive && player.iFrames <= 0) {
+        for (let bi = boss2Bullets.length - 1; bi >= 0; bi--) {
+            if (Collision.circleVsCircle(boss2Bullets[bi], player)) {
+                boss2Bullets.splice(bi, 1);
+                if (shieldHp > 0) { shieldHp = 0; player.iFrames = 500; }
+                else { player.hp -= 1; player.iFrames = 1000; if (player.hp <= 0) player.alive = false; }
+                break;
+            }
+        }
+    }
+
+    // Boss2 body vs player (deals damage during dash in attack phase)
+    if (boss2 && boss2WarningTimer <= 0 && boss2DashActive && player.alive && player.iFrames <= 0) {
+        if (Collision.circleVsCircle(player, boss2)) {
+            if (shieldHp > 0) { shieldHp = 0; player.iFrames = 500; }
+            else { player.hp -= 1; player.iFrames = 1000; if (player.hp <= 0) player.alive = false; }
         }
     }
 

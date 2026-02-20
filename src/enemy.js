@@ -11,7 +11,7 @@ function randRange(min, max) {
 
 function createEnemy(x, y) {
     // Difficulty scales with time — enemies get faster and more aggressive
-    const elapsed = gameTime / 1000;
+    const elapsed = Math.max(0, (gameTime - difficultyOffset)) / 1000 * (postBossMode ? 3 : 1);
     const ramp = 1 + elapsed * 0.02; // +2% per second
 
     const e = {

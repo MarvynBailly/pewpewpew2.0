@@ -10,7 +10,19 @@ bgImage.src = "Sprites/Background.png";
 // ── Input tracking ───────────────────────────────────────
 const keys = {};
 const mouse = { x: 0, y: 0 };
-window.addEventListener("keydown", (e) => { keys[e.key] = true; });
+let paused = false;
+
+window.addEventListener("keydown", (e) => {
+    keys[e.key] = true;
+    if (e.key === "Escape" && player.alive && !upgradePending) {
+        paused = !paused;
+        if (!paused) {
+            // Reset lastTime so we don't get a huge dt spike on resume
+            lastTime = performance.now();
+            requestAnimationFrame(gameLoop);
+        }
+    }
+});
 window.addEventListener("keyup", (e) => { keys[e.key] = false; });
 canvas.addEventListener("mousemove", (e) => {
     const rect = canvas.getBoundingClientRect();
@@ -70,8 +82,12 @@ function drawBackground() {
 }
 
 // ── Score & timer ────────────────────────────────────────
-let score = 0;
+let score    = 0;
 let gameTime = 0; // ms elapsed
+
+// ── Difficulty offset ────────────────────────────────────
+// Reset to gameTime whenever difficulty should restart (e.g. after boss death)
+let difficultyOffset = 0;
 
 function drawHUD() {
     const pad = 20;
@@ -100,7 +116,7 @@ const SPAWN_RAMP = 0.97;           // multiplier applied per second (lower = ram
 let spawnTimer = 1500; // first enemy comes quickly
 
 function getSpawnInterval() {
-    const elapsed = gameTime / 1000;
+    const elapsed = Math.max(0, (gameTime - difficultyOffset)) / 1000 * (postBossMode ? 3 : 1);
     return Math.max(SPAWN_MIN_INTERVAL, SPAWN_BASE_INTERVAL * Math.pow(SPAWN_RAMP, elapsed));
 }
 
@@ -126,8 +142,46 @@ function spawnEnemyFromEdge() {
     createEnemy(x, y);
 }
 
+const BOSS_SPAWN_TIME = 60000; // 60 seconds
+
+let postBossMode        = false; // true after both bosses are killed — ramps difficulty hard
+let boss2SpawnCountdown = -1; // counts down after Boss I dies (solo Boss II fight)
+let dualBossCountdown  = -1; // counts down after Boss II dies (dual fight)
+let dualBossMode       = false; // true once the dual phase begins
+
 function updateSpawner(dt) {
     if (!player.alive) return;
+
+    // Trigger Boss I at 60 s
+    if (!bossSpawned && gameTime >= BOSS_SPAWN_TIME) {
+        spawnBoss();
+        return;
+    }
+
+    // Tick the Boss II solo countdown (starts when Boss I dies)
+    if (boss2SpawnCountdown > 0) {
+        boss2SpawnCountdown -= dt;
+        if (boss2SpawnCountdown <= 0 && !boss2Spawned) {
+            spawnBoss2();
+            return;
+        }
+    }
+
+    // Tick the dual-boss countdown (starts when Boss II dies solo, then repeats)
+    if (dualBossCountdown > 0) {
+        dualBossCountdown -= dt;
+        if (dualBossCountdown <= 0) {
+            dualBossMode = true;
+            spawnBoss();
+            spawnBoss2();
+            dualBossCountdown = -1;
+            return;
+        }
+    }
+
+    // Pause regular spawning while either boss is alive or enemies are frozen
+    if (boss !== null || boss2 !== null) return;
+    if (freezeTimer > 0) return;
 
     spawnTimer -= dt;
     if (spawnTimer <= 0) {
@@ -179,8 +233,22 @@ function drawGameOver() {
     ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
     ctx.fillText("Try Again", cx, btnY + btnH / 2);
 
+    // Scoreboard button
+    const sbBtnY = btnY + btnH + 12;
+
+    ctx.fillStyle = "rgba(255, 200, 60, 0.1)";
+    ctx.fillRect(btnX, sbBtnY, btnW, btnH);
+    ctx.strokeStyle = "rgba(255, 200, 60, 0.5)";
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(btnX, sbBtnY, btnW, btnH);
+
+    ctx.font = "bold 18px monospace";
+    ctx.fillStyle = "rgba(255, 210, 60, 0.9)";
+    ctx.fillText("Scoreboard", cx, sbBtnY + btnH / 2);
+
     // Store button bounds for click detection
-    drawGameOver.btnBounds = { x: btnX, y: btnY, w: btnW, h: btnH };
+    drawGameOver.btnBounds   = { x: btnX, y: btnY,   w: btnW, h: btnH };
+    drawGameOver.sbBtnBounds = { x: btnX, y: sbBtnY, w: btnW, h: btnH };
 }
 
 function resetGame() {
@@ -206,9 +274,39 @@ function resetGame() {
     xpOrbs.length = 0;
 
     // Reset game state
-    score = 0;
-    gameTime = 0;
-    spawnTimer = 1500;
+    score            = 0;
+    gameTime         = 0;
+    difficultyOffset = 0;
+    spawnTimer       = 1500;
+    boss               = null;
+    bossSpawned        = false;
+    bossWarningTimer   = 0;
+    bossState          = BS.HUNT;
+    bossFireTimer      = 2500;
+    bossChargeTimer    = BOSS_CHARGE_INTERVAL;
+    bossBullets.length = 0;
+    dashTrail.length   = 0;
+    postBossMode         = false;
+    boss2SpawnCountdown  = -1;
+    dualBossCountdown    = -1;
+    dualBossMode         = false;
+    boss2              = null;
+    boss2Spawned       = false;
+    boss2WarningTimer  = 0;
+    boss2Phase         = "defend";
+    boss2PhaseTimer    = BOSS2_PHASE_DURATION;
+    boss2PhaseFlash    = 0;
+    boss2OrbitAngle    = 0;
+    boss2FireTimer     = B2M_FIRE_RATE;
+    boss2DodgeCooldown    = 0;
+    boss2DodgeActive      = false;
+    boss2DodgeTimeLeft    = 0;
+    boss2DashTimer        = B2_DASH_COOLDOWN;
+    boss2DashActive       = false;
+    boss2Missiles.length  = 0;
+    boss2Bullets.length   = 0;
+    boss2DodgeTrail.length = 0;
+    paused             = false;
     fireTimer = 0;
     fireModes = {};
     freezeTimer = 0;
@@ -232,6 +330,8 @@ function resetGame() {
     levelUpFlashTimer  = 0;
     levelUpEffectStart = 0;
 
+    resetScoreboardSession();
+
     // Restart loop
     lastTime = performance.now();
     requestAnimationFrame(gameLoop);
@@ -254,20 +354,47 @@ canvas.addEventListener("click", (e) => {
         return; // ignore clicks outside cards while menu is open
     }
 
-    // Game over retry button
+    // Game over buttons
     if (!gameOver || !drawGameOver.btnBounds) return;
+
     const b = drawGameOver.btnBounds;
     if (mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h) {
         resetGame();
+        return;
+    }
+
+    const sb = drawGameOver.sbBtnBounds;
+    if (sb && mx >= sb.x && mx <= sb.x + sb.w && my >= sb.y && my <= sb.y + sb.h) {
+        showScoreboard(score, gameTime);
     }
 });
 
 // ── Game loop ────────────────────────────────────────────
 let lastTime = 0;
 
+function drawPauseOverlay() {
+    ctx.fillStyle = "rgba(0, 0, 0, 0.55)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.textAlign    = "center";
+    ctx.textBaseline = "middle";
+    ctx.font         = "bold 64px monospace";
+    ctx.fillStyle    = "rgba(255, 255, 255, 0.9)";
+    ctx.fillText("PAUSED", canvas.width / 2, canvas.height / 2 - 20);
+
+    ctx.font      = "bold 18px monospace";
+    ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
+    ctx.fillText("Press ESC to resume", canvas.width / 2, canvas.height / 2 + 36);
+}
+
 function gameLoop(timestamp) {
     const dt = timestamp - lastTime;
     lastTime = timestamp;
+
+    if (paused) {
+        drawPauseOverlay();
+        return; // hold the frame, don't reschedule
+    }
 
     if (player.alive && !upgradePending) gameTime += dt;
 
@@ -278,6 +405,8 @@ function gameLoop(timestamp) {
         updatePlayer(dt);
         updateBullets(dt);
         updateEnemies(dt);
+        updateBoss(dt);
+        updateBoss2(dt);
         updatePowerups(dt);
         updateMissiles(dt);
         updateExplosions(dt);
@@ -292,6 +421,8 @@ function gameLoop(timestamp) {
     drawBullets();
     drawMissiles();
     drawEnemies();
+    drawBoss();
+    drawBoss2();
     drawPlayer();
     drawMagnet();
     drawShield();
