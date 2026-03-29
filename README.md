@@ -147,6 +147,6 @@ HP bar turns red and the boss visually shakes when enraged.
 - [ ] Character (jet/plane) sprites
 - [ ] Boss sprites
 - [ ] Enemy sprites
-- [ ] Power up sprites maybe (yes please!!)?
+- [x] Power up sprites maybe (yes please!!)?
 - [ ] Bullet sprites
 - [ ] Pewpewpew lore
