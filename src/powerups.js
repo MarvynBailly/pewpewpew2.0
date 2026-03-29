@@ -42,6 +42,24 @@ const POWERUP_SYMBOLS = {
     magnet:  'Ω',
 };
 
+// ── Powerup Sprites ─────────────────────────────────────
+const POWERUP_SPRITES = {};
+const POWERUP_SPRITE_MAP = {
+    nuke:    'Sprites/Powerups/Powerups_-1.png',
+    magnet:  'Sprites/Powerups/Powerups_-2.png',
+    health:  'Sprites/Powerups/Powerups_-3.png',
+    freeze:  'Sprites/Powerups/Powerups_-4.png',
+    shield:  'Sprites/Powerups/Powerups_-5.png',
+    minigun: 'Sprites/Powerups/Powerups_-6.png',
+    missile: 'Sprites/Powerups/Powerups_-7.png',
+    trishot: 'Sprites/Powerups/Powerups_-8.png',
+};
+for (const [type, src] of Object.entries(POWERUP_SPRITE_MAP)) {
+    const img = new Image();
+    img.src = src;
+    POWERUP_SPRITES[type] = img;
+}
+
 function spawnPowerup() {
     if (powerups.length >= POWERUP_MAX_ON_SCREEN) return;
 
@@ -236,8 +254,7 @@ function drawPowerups() {
     const t = Date.now() / 400;
     for (const p of powerups) {
         const pulse = 1 + Math.sin(t) * 0.08;
-        const r = POWERUP_RADIUS * pulse;
-        const col = POWERUP_COLORS[p.type];
+        const size = POWERUP_RADIUS * 2 * pulse;
 
         // Fade out in last 3 seconds
         const fadeAlpha = Math.min(1, p.life / 3000);
@@ -245,31 +262,23 @@ function drawPowerups() {
         ctx.save();
         ctx.globalAlpha = fadeAlpha;
 
-        // Outer glow ring
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, r + 5, 0, Math.PI * 2);
-        ctx.fillStyle = col.ring + '33';
-        ctx.fill();
-
-        // Ring
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, r + 2, 0, Math.PI * 2);
-        ctx.strokeStyle = col.ring;
-        ctx.lineWidth = 2;
-        ctx.stroke();
-
-        // Background circle
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
-        ctx.fillStyle = col.bg;
-        ctx.fill();
-
-        // Symbol
-        ctx.font = `bold ${Math.round(r * 1.1)}px monospace`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillStyle = '#ffffff';
-        ctx.fillText(POWERUP_SYMBOLS[p.type], p.x, p.y + 1);
+        const sprite = POWERUP_SPRITES[p.type];
+        if (sprite && sprite.complete && sprite.naturalWidth > 0) {
+            ctx.drawImage(sprite, p.x - size / 2, p.y - size / 2, size, size);
+        } else {
+            // Fallback: colored circle + symbol
+            const r = POWERUP_RADIUS * pulse;
+            const col = POWERUP_COLORS[p.type];
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+            ctx.fillStyle = col.bg;
+            ctx.fill();
+            ctx.font = `bold ${Math.round(r * 1.1)}px monospace`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText(POWERUP_SYMBOLS[p.type], p.x, p.y + 1);
+        }
 
         ctx.restore();
     }

@@ -166,11 +166,13 @@ const BOSS_SPAWN_FNS = [
 ];
 
 function shuffleBossQueue() {
-    bossQueue = [0, 1, 2, 3, 4, 5, 6];
-    for (let i = bossQueue.length - 1; i > 0; i--) {
+    // Bosses 0–4 appear in random order; 5 (Berserker) and 6 (Swarm Queen) always come last.
+    const early = [0, 1, 2, 3, 4];
+    for (let i = early.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
-        [bossQueue[i], bossQueue[j]] = [bossQueue[j], bossQueue[i]];
+        [early[i], early[j]] = [early[j], early[i]];
     }
+    bossQueue = [...early, 5, 6];
 }
 
 // Called by every boss death handler.
